@@ -7,6 +7,7 @@ from concurrent import futures
 import time
 
 import time
+import subprocess
 import grpc
 
 import helloworld_pb2
@@ -16,17 +17,25 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class Greeter(helloworld_pb2.GreeterServicer):
 
+    def __init__(self):
+        self.proc = None
+
     def SayHello(self, request, context):
         print("Greeter server received request")
-        time.sleep(10)
-        print("Greeter server send response")
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        self.proc = subprocess.Popen(["python", "slave.py"])
+        while self.proc.poll() is None:
+            time.sleep(0.1)
+        status = self.proc.poll()
+        message = 'Hello, {}! Status is {}.'.format(request.name, status)
+        print("Greeter server send response: " + message)
+        self.proc = None
+        return helloworld_pb2.HelloReply(message=message)
 
-    def SayHelloAgain(self, request, context):
-        print("Greeter server received request")
-        print("Greeter server send response")
-        return helloworld_pb2.HelloReply(message='Hello again, %s!' % request.name)
-
+    def Cancel(self, request, context):
+        print("Greeter server received cancel")
+        self.proc.kill()
+        print("Greeter is killed")
+        return helloworld_pb2.CancelReply()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

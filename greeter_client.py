@@ -11,7 +11,16 @@ import grpc
 import helloworld_pb2
 
 
-def send():
+def send_blocking():
+    channel = grpc.insecure_channel('localhost:50051')
+    stub = helloworld_pb2.GreeterStub(channel)
+    request = helloworld_pb2.HelloRequest(name='you')
+    response = stub.SayHello(request)
+    print("Greeter client recieve blocking response")
+    return response
+
+
+def send_nonblocking():
     channel = grpc.insecure_channel('localhost:50051')
     stub = helloworld_pb2.GreeterStub(channel)
     request = helloworld_pb2.HelloRequest(name='you')
@@ -27,16 +36,26 @@ def recieve(future):
 
 
 def cancel(future):
+    channel = grpc.insecure_channel('localhost:50051')
+    stub = helloworld_pb2.GreeterStub(channel)
+    request = helloworld_pb2.CancelRequest()
+    response = stub.Cancel(request)
     ret = future.cancel()
     print("Greeter client send cancel")
 
 
 def run():
-    future1 = send()
-    future2 = send()
+    # Blocking
+    response = send_blocking()
+
+    # Non-blocking
+    future = send_nonblocking()
+    response = recieve(future)
+
+    # Non-blocking send and cancel
+    future = send_nonblocking()
     time.sleep(1)
-    cancel(future1)
-    response = recieve(future2)
+    cancel(future)
 
 
 if __name__ == '__main__':
