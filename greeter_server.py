@@ -33,8 +33,11 @@ class Greeter(helloworld_pb2.GreeterServicer):
 
     def Cancel(self, request, context):
         print("Greeter server received cancel")
-        self.proc.kill()
-        print("Greeter is killed")
+        if self.proc is not None:
+            self.proc.kill()
+            print("Greeter is killed")
+        else:
+            print("Greeter has not been started or finished.")
         return helloworld_pb2.CancelReply()
 
 def serve():

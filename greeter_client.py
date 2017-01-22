@@ -36,11 +36,12 @@ def recieve(future):
 
 
 def cancel(future):
+    ret = future.cancel()
+    print("Return of future.cancel() is {}".format(ret))
     channel = grpc.insecure_channel('localhost:50051')
     stub = helloworld_pb2.GreeterStub(channel)
     request = helloworld_pb2.CancelRequest()
     response = stub.Cancel(request)
-    ret = future.cancel()
     print("Greeter client send cancel")
 
 
@@ -52,9 +53,18 @@ def run():
     future = send_nonblocking()
     response = recieve(future)
 
-    # Non-blocking send and cancel
+    # Non-blocking send cancel immediately
+    future = send_nonblocking()
+    cancel(future)
+
+    # Non-blocking send cancel in computing
     future = send_nonblocking()
     time.sleep(1)
+    cancel(future)
+
+    # Non-blocking send cancel after computing
+    future = send_nonblocking()
+    time.sleep(7)
     cancel(future)
 
 
